@@ -10,6 +10,8 @@ import os
 import io
 import time
 import base64
+import json
+
 
 # 📱 Improve mobile compatibility
 print("System time (UTC):", time.time())
@@ -72,9 +74,8 @@ os.makedirs(SAVE_FOLDER, exist_ok=True)
 # ✅ Function: Save to Google Sheets
 def save_to_google_sheet(df, sheet_name="pharmacy-app-service"):
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name(
-        "C:/Users/Sony/Downloads/smiling-timing-467510-q6-e8149475ba0c.json", scope
-    )
+    creds_dict = st.secrets["gcp_service_account"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
     sheet = client.open(sheet_name).sheet1
     sheet.clear()
