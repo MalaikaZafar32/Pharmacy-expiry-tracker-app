@@ -1,0 +1,7 @@
+*.json
+*.csv
+*.xlsx
+__pycache__/
+.env
+.streamlit/secrets.toml
+/.streamlit
