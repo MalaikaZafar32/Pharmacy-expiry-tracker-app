@@ -73,10 +73,11 @@ os.makedirs(SAVE_FOLDER, exist_ok=True)
 
 # ✅ Function: Save to Google Sheets
 def save_to_google_sheet(df, sheet_name="pharmacy-app-service"):
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     creds_dict = st.secrets["gcp_service_account"]
     creds = service_account.Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"]
+    st.secrets["gcp_service_account"],
+    scopes=["https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"]
     )
     client = gspread.authorize(creds)
     sheet = client.open(sheet_name).sheet1
