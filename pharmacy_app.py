@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import re
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2 import service_account
 import datetime
 import os
 import io
@@ -75,7 +75,9 @@ os.makedirs(SAVE_FOLDER, exist_ok=True)
 def save_to_google_sheet(df, sheet_name="pharmacy-app-service"):
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     creds_dict = st.secrets["gcp_service_account"]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    creds = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"]
+    )
     client = gspread.authorize(creds)
     sheet = client.open(sheet_name).sheet1
     sheet.clear()
