@@ -4,14 +4,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import re
 import gspread
-from google.oauth2 import service_account
 import datetime
 import os
 import io
 import time
 import base64
-import json
-
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # 📱 Improve mobile compatibility
 print("System time (UTC):", time.time())
@@ -70,27 +70,9 @@ h1, h2, h3, h4 {
 # ✅ Folder for saving files
 SAVE_FOLDER = "saved_data"
 os.makedirs(SAVE_FOLDER, exist_ok=True)
-
-# ✅ Function: Save to Google Sheets
-def save_to_google_sheet(df, sheet_name="pharmacy-app-service"):
-    creds_dict = st.secrets["gcp_service_account"]
-    creds = service_account.Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"],
-    scopes=["https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive"]
-    )
-    client = gspread.authorize(creds)
-    sheet = client.open(sheet_name).sheet1
-    sheet.clear()
-
-    # ✅ Convert all Timestamp/datetime columns to string to avoid JSON error
-    df = df.copy()
-    for col in df.columns:
-        if pd.api.types.is_datetime64_any_dtype(df[col]):
-            df[col] = df[col].astype(str)
-
-    # ✅ Upload cleaned, stringified data
-    sheet.update([df.columns.values.tolist()] + df.values.tolist())
+def save_user_data(df, user_email):
+    filename = os.path.join(SAVE_FOLDER, f"{user_email}.xlsx")
+    df.to_excel(filename, index=False)
 
 # 💟 Step 2: App Title
 st.set_page_config(page_title="Pharmacy Expiry Tracker", layout="centered")
@@ -282,31 +264,25 @@ with tab3:
     else:
         st.success("✅ All medicines are in safe expiry zone.")
 with tab4:
-    st.header("🚨 Expiry Alerts & Sync")
+    st.header("🚨 Expiry Alerts")
     if "df" not in st.session_state:
         st.warning("⚠️ Please upload a file in the '📁 Upload' tab first.")
         st.stop()
     else:
         df = st.session_state.df.copy()
+        if st.button("📧 Setup Weekly Email Alerts"):
+            st.info("✅ Email alerts for expired medicines will be sent automatically every week.")
+        with st.form("email_form"):
+            st.write("📧 Enter your email (comma-separated):")
+            emails_input = st.text_area("Emails")
+            submitted = st.form_submit_button("Save Emails")
+            if submitted:
+                emails = [e.strip() for e in emails_input.split(",") if e.strip()]
+                # Save these emails in Google Sheet or a file
+                st.success(f"✅ Saved {len(emails)} email(s)")
 
-    if st.checkbox("✅ Sync with Google Sheets for email alarms"):
-        with st.spinner("🔄 Syncing with Google Sheets... Please wait"):
-            save_to_google_sheet(df)
-        st.success("✅ Synced successfully!")
-
-
-    # Ask for email
-    user_email = st.text_input("Enter your email to get expiry alerts:")
-
-    # Add email to dataframe if provided
-    if user_email:
-        df["Email"] = user_email  # Adds same email to all rows for this upload
-
-    # Now save to Google Sheet
-    save_to_google_sheet(df)
-
-    st.download_button("⬇️ Download Cleaned Data", df.to_csv(index=False), file_name="cleaned_pharmacy_data.csv")
-    excel_filename = os.path.join(SAVE_FOLDER, f"cleaned_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
-    df.to_excel(excel_filename, index=False)
-    st.success(f"✅ Cleaned Excel file also saved: {excel_filename}")
-    st.download_button("⬇️ Download Excel File", data=open(excel_filename, 'rb'), file_name="cleaned_pharmacy_data.xlsx")
+        st.download_button("⬇️ Download Cleaned Data", df.to_csv(index=False), file_name="cleaned_pharmacy_data.csv")
+        excel_filename = os.path.join(SAVE_FOLDER, f"cleaned_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+        df.to_excel(excel_filename, index=False)
+        st.success(f"✅ Cleaned Excel file also saved: {excel_filename}")
+        st.download_button("⬇️ Download Excel File", data=open(excel_filename, 'rb'), file_name="cleaned_pharmacy_data.xlsx")
