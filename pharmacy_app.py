@@ -12,6 +12,12 @@ import base64
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+st.markdown(
+    """
+    <meta name="google-site-verification" content="1a22ea545e4459b3" />
+    """,
+    unsafe_allow_html=True
+)
 
 # 📱 Improve mobile compatibility
 print("System time (UTC):", time.time())
